@@ -5,7 +5,7 @@
 //! WebSocket with the credential on the upgrade — the backend's validator
 //! and gate then decide, as they do for synapse. An in-process upstream
 //! (plexus-transport's `with_mcp`) names the caller from the same
-//! credential and calls the hub in memory.
+//! credential and calls the service in memory.
 
 use std::collections::HashMap;
 use std::fmt;
@@ -62,9 +62,9 @@ pub enum UpstreamError {
 
 /// How a bridge reaches its backend.
 pub trait Upstream: Send + Sync + 'static {
-    /// The backend's hub namespace: what its `call`, `hashes` and `schema`
-    /// methods are prefixed with.
-    fn hub(&self) -> &str;
+    /// The backend's service namespace: what its `call`, `hashes` and
+    /// `schema` methods are prefixed with (`menger` for menger).
+    fn service(&self) -> &str;
 
     /// A transport that calls the backend as `credential`.
     fn transport_for(&self, credential: &Credential) -> BoxFuture<'_, Result<DynTransport, UpstreamError>>;
@@ -75,20 +75,21 @@ pub trait Upstream: Send + Sync + 'static {
 /// request.
 pub struct SocketUpstream {
     url: String,
-    hub: String,
+    service: String,
     open: Mutex<HashMap<Credential, WsTransport>>,
 }
 
 impl fmt::Debug for SocketUpstream {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("SocketUpstream").field("url", &self.url).field("hub", &self.hub).finish()
+        f.debug_struct("SocketUpstream").field("url", &self.url).field("service", &self.service).finish()
     }
 }
 
 impl SocketUpstream {
-    /// The backend at `url` (`ws://host:port`), whose hub namespace is `hub`.
-    pub fn new(url: impl Into<String>, hub: impl Into<String>) -> Self {
-        Self { url: url.into(), hub: hub.into(), open: Mutex::new(HashMap::new()) }
+    /// The backend at `url` (`ws://host:port`), whose service namespace is
+    /// `service`.
+    pub fn new(url: impl Into<String>, service: impl Into<String>) -> Self {
+        Self { url: url.into(), service: service.into(), open: Mutex::new(HashMap::new()) }
     }
 
     /// The backend's URL.
@@ -99,7 +100,7 @@ impl SocketUpstream {
     async fn connect(&self, credential: &Credential) -> Result<WsTransport, UpstreamError> {
         let headers: Vec<(String, String)> =
             credential.authorization().into_iter().map(|v| ("authorization".to_string(), v)).collect();
-        WsTransport::connect_with_headers(&self.url, &self.hub, &headers).await.map_err(|e| match e.kind {
+        WsTransport::connect_with_headers(&self.url, &self.service, &headers).await.map_err(|e| match e.kind {
             TransportErrorKind::Http { status: 401 | 403 } => UpstreamError::Unauthorized,
             _ => UpstreamError::Unreachable(e.message),
         })
@@ -107,8 +108,8 @@ impl SocketUpstream {
 }
 
 impl Upstream for SocketUpstream {
-    fn hub(&self) -> &str {
-        &self.hub
+    fn service(&self) -> &str {
+        &self.service
     }
 
     fn transport_for(&self, credential: &Credential) -> BoxFuture<'_, Result<DynTransport, UpstreamError>> {

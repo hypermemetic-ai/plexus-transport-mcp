@@ -1,8 +1,8 @@
 //! `plexus-transport-mcp`: any running Plexus RPC backend as an MCP server.
 //!
 //! ```sh
-//! plexus-transport-mcp --url ws://127.0.0.1:4455 --hub menger --listen 127.0.0.1:4459
-//! plexus-transport-mcp --url ws://127.0.0.1:4455 --hub menger --stdio --bearer-file ~/.plexus/mcp.token
+//! plexus-transport-mcp --url ws://127.0.0.1:4455 --service menger --listen 127.0.0.1:4459
+//! plexus-transport-mcp --url ws://127.0.0.1:4455 --service menger --stdio --bearer-file ~/.plexus/mcp.token
 //! plexus-transport-mcp --config mcp.toml
 //! ```
 //!
@@ -20,9 +20,9 @@ struct Args {
     /// The backend's WebSocket, e.g. ws://127.0.0.1:4455.
     #[arg(long)]
     url: Option<String>,
-    /// The backend's hub namespace (what its `call` is prefixed with).
+    /// The backend's service namespace (what its `call` is prefixed with).
     #[arg(long)]
-    hub: Option<String>,
+    service: Option<String>,
     /// Where to listen for MCP over HTTP.
     #[arg(long)]
     listen: Option<SocketAddr>,
@@ -59,10 +59,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(path) => toml::from_str(&std::fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?)?,
         None => McpConfig::default(),
     };
-    if let (Some(url), Some(hub)) = (&args.url, &args.hub) {
-        config.upstream = Some(UpstreamConfig { url: url.clone(), hub: hub.clone() });
-    } else if args.url.is_some() || args.hub.is_some() {
-        return Err("--url and --hub go together".into());
+    if let (Some(url), Some(service)) = (&args.url, &args.service) {
+        config.upstream = Some(UpstreamConfig { url: url.clone(), service: service.clone() });
+    } else if args.url.is_some() || args.service.is_some() {
+        return Err("--url and --service go together".into());
     }
     if let Some(listen) = args.listen {
         config.listen = Some(listen);
@@ -87,9 +87,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let Some(upstream) = config.upstream.clone() else {
-        return Err("no backend: give --url and --hub, or [upstream] in the config".into());
+        return Err("no backend: give --url and --service, or [upstream] in the config".into());
     };
-    let bridge = McpBridge::new(SocketUpstream::new(&upstream.url, &upstream.hub), config.clone());
+    let bridge = McpBridge::new(SocketUpstream::new(&upstream.url, &upstream.service), config.clone());
 
     if args.stdio {
         let credential = match &args.bearer_file {
@@ -99,7 +99,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             None => Credential::Anonymous,
         };
-        tracing::info!(backend = %upstream.url, hub = %upstream.hub, "MCP on stdio");
+        tracing::info!(backend = %upstream.url, service = %upstream.service, "MCP on stdio");
         serve_stdio(bridge.with_fixed_credential(credential)).await?;
         return Ok(());
     }
@@ -107,7 +107,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let listen = config.listen.unwrap_or_else(|| "127.0.0.1:4459".parse().expect("a socket address"));
     let listener = tokio::net::TcpListener::bind(listen).await.map_err(|e| format!("cannot listen on {listen}: {e}"))?;
     let bound = listener.local_addr()?;
-    tracing::info!(backend = %upstream.url, hub = %upstream.hub, "MCP at http://{bound}{}", config.path);
+    tracing::info!(backend = %upstream.url, service = %upstream.service, "MCP at http://{bound}{}", config.path);
     if let Some(o) = &config.oauth {
         tracing::info!(resource = %o.resource, "an OAuth 2.1 resource server; metadata at {}", plexus_transport_mcp::ProtectedResource::from(o).metadata_url());
     }

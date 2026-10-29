@@ -1,6 +1,6 @@
 //! `tools/list`, read off the wire: the backend's `hashes` names the
 //! activations the caller may see and the view's hash; each `<ns>.schema`
-//! (and each static child's, recursively) names the methods. The hub
+//! (and each static child's, recursively) names the methods. The service
 //! answers both from the caller's view (AUTH-4), so the list is the
 //! caller's reach by construction.
 
@@ -31,7 +31,7 @@ pub struct ToolRef {
 }
 
 impl ToolRef {
-    /// The wire reference for the hub's `call`.
+    /// The wire reference for the service's `call`.
     pub fn method_ref(&self) -> MethodRef {
         MethodRef::new(self.namespace, self.method).at(self.path)
     }
@@ -88,18 +88,18 @@ pub async fn one(transport: &DynTransport, method: MethodRef, params: Value) -> 
 }
 
 /// The view's hash alone: one round trip, to know whether to re-read.
-pub async fn view_hash(transport: &DynTransport, hub: &str) -> Result<String, ReadError> {
-    let hashes = one(transport, MethodRef::new(intern(hub), "hashes"), json!({})).await?;
+pub async fn view_hash(transport: &DynTransport, service: &str) -> Result<String, ReadError> {
+    let hashes = one(transport, MethodRef::new(intern(service), "hashes"), json!({})).await?;
     hashes
         .get("hash")
         .and_then(Value::as_str)
         .map(str::to_string)
-        .ok_or_else(|| ReadError::Shape { method: format!("{hub}.hashes"), detail: "no hash".into() })
+        .ok_or_else(|| ReadError::Shape { method: format!("{service}.hashes"), detail: "no hash".into() })
 }
 
 /// Everything the caller may call, as tools.
-pub async fn read(transport: &DynTransport, hub: &str) -> Result<ToolSet, ReadError> {
-    let hashes = one(transport, MethodRef::new(intern(hub), "hashes"), json!({})).await?;
+pub async fn read(transport: &DynTransport, service: &str) -> Result<ToolSet, ReadError> {
+    let hashes = one(transport, MethodRef::new(intern(service), "hashes"), json!({})).await?;
     let hash = hashes.get("hash").and_then(Value::as_str).unwrap_or_default().to_string();
     let namespaces: Vec<String> = hashes
         .get("children")

@@ -6,8 +6,8 @@
 //! [`plexus_client::Transport`] on one side and MCP (rmcp 3.x) on the
 //! other. Beside a running backend it opens the backend's WebSocket as the
 //! caller ([`SocketUpstream`]); inside a backend's binary an in-process
-//! [`Upstream`] calls the hub in memory as the caller. Either way every
-//! `tools/call` is `{hub}.call` as that caller, so the backend's gate
+//! [`Upstream`] calls the service in memory as the caller. Either way every
+//! `tools/call` is `{service}.call` as that caller, so the backend's gate
 //! decides it exactly as it decides a WebSocket call, and `tools/list` is
 //! what the backend's `hashes` and `<ns>.schema` answer that caller — the
 //! caller's view (AUTH-4), read off the wire.

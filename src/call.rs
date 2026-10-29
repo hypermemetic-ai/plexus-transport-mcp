@@ -1,4 +1,4 @@
-//! `tools/call`: one `{hub}.call` as the caller, its stream mapped onto one
+//! `tools/call`: one `{service}.call` as the caller, its stream mapped onto one
 //! `CallToolResult` — progress relayed when the client gave a token, and
 //! the caps of [`Limits`] ending the call with a typed error rather than
 //! a hang.

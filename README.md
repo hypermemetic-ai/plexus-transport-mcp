@@ -13,14 +13,14 @@ that caller — the caller's view (AUTH-4), read off the wire.
 ## Beside a running backend
 
 ```sh
-plexus-transport-mcp --url ws://127.0.0.1:4455 --hub menger --listen 127.0.0.1:4459
+plexus-transport-mcp --url ws://127.0.0.1:4455 --service menger --listen 127.0.0.1:4459
 # MCP at http://127.0.0.1:4459/mcp — nothing on the backend changes
 ```
 
 For an MCP client that runs a command:
 
 ```sh
-plexus-transport-mcp --url ws://127.0.0.1:4455 --hub menger --stdio --bearer-file ~/.plexus/mcp.token
+plexus-transport-mcp --url ws://127.0.0.1:4455 --service menger --stdio --bearer-file ~/.plexus/mcp.token
 ```
 
 ## From a file
@@ -33,7 +33,7 @@ allowed_hosts = ["app.menger.sh"]
 
 [upstream]
 url = "ws://127.0.0.1:4455"
-hub = "menger"
+service = "menger"
 
 [oauth]                                   # /mcp as an OAuth 2.1 resource server
 resource = "https://app.menger.sh/mcp"   # the audience a token must carry
@@ -59,7 +59,7 @@ credential is the anonymous caller (AUTH-6's anonymous view).
 ## Inside a backend
 
 The same bridge over an in-process `Upstream` — plexus-transport's
-`with_mcp(McpConfig)` (TRANSPORT-9 moves the consumers onto it).
+`with_mcp(McpConfig)`, the service in memory (TRANSPORT-9 moves the consumers onto it).
 
 ## What a tool is
 

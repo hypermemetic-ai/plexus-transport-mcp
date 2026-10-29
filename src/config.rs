@@ -8,7 +8,7 @@
 //! listen = "127.0.0.1:4459"
 //! [upstream]
 //! url = "ws://127.0.0.1:4455"
-//! hub = "menger"
+//! service = "menger"
 //! [oauth]
 //! resource = "https://app.menger.sh/mcp"
 //! authorization_servers = ["https://login.menger.sh"]
@@ -76,8 +76,8 @@ impl McpConfig {
     }
 
     /// The backend a sidecar fronts.
-    pub fn with_upstream(mut self, url: impl Into<String>, hub: impl Into<String>) -> Self {
-        self.upstream = Some(UpstreamConfig { url: url.into(), hub: hub.into() });
+    pub fn with_upstream(mut self, url: impl Into<String>, service: impl Into<String>) -> Self {
+        self.upstream = Some(UpstreamConfig { url: url.into(), service: service.into() });
         self
     }
 
@@ -115,9 +115,9 @@ impl McpConfig {
 pub struct UpstreamConfig {
     /// Its WebSocket, e.g. `ws://127.0.0.1:4455`.
     pub url: String,
-    /// Its hub namespace — what its `call` method is prefixed with
+    /// Its service namespace — what its `call` method is prefixed with
     /// (`menger` for menger).
-    pub hub: String,
+    pub service: String,
 }
 
 /// RFC 9728 protected-resource metadata for `/mcp`.
@@ -140,7 +140,7 @@ impl Default for OAuthConfig {
     }
 }
 
-/// What `initialize` reports. Defaults: the upstream hub's name, this
+/// What `initialize` reports. Defaults: the upstream service's name, this
 /// crate's version.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
@@ -181,7 +181,7 @@ mod tests {
             listen = "127.0.0.1:4459"
             [upstream]
             url = "ws://127.0.0.1:4455"
-            hub = "menger"
+            service = "menger"
             [oauth]
             resource = "https://app.menger.sh/mcp"
             authorization_servers = ["https://login.menger.sh"]
@@ -191,7 +191,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(c.path, "/mcp");
-        assert_eq!(c.upstream.as_ref().unwrap().hub, "menger");
+        assert_eq!(c.upstream.as_ref().unwrap().service, "menger");
         assert_eq!(c.limits.items, 5);
         assert_eq!(c.limits.call_secs, 300);
         assert!(!c.admits_anonymous(), "oauth forces the 401");

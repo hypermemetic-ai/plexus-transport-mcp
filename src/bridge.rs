@@ -37,7 +37,7 @@ impl<U: Upstream> Clone for McpBridge<U> {
 
 impl<U: Upstream> std::fmt::Debug for McpBridge<U> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("McpBridge").field("hub", &self.inner.upstream.hub()).field("path", &self.inner.config.path).finish()
+        f.debug_struct("McpBridge").field("service", &self.inner.upstream.service()).field("path", &self.inner.config.path).finish()
     }
 }
 
@@ -81,14 +81,14 @@ impl<U: Upstream> McpBridge<U> {
 
     /// The caller's tools: re-read when the view's hash moved.
     async fn tools_for(&self, credential: &Credential, transport: &DynTransport) -> Result<Arc<ToolSet>, ErrorData> {
-        let hub = self.inner.upstream.hub();
-        let hash = tools::view_hash(transport, hub).await.map_err(read_error)?;
+        let service = self.inner.upstream.service();
+        let hash = tools::view_hash(transport, service).await.map_err(read_error)?;
         if let Some(set) = self.inner.cache.lock().await.get(credential) {
             if set.hash == hash {
                 return Ok(set.clone());
             }
         }
-        let set = Arc::new(tools::read(transport, hub).await.map_err(read_error)?);
+        let set = Arc::new(tools::read(transport, service).await.map_err(read_error)?);
         self.inner.cache.lock().await.insert(credential.clone(), set.clone());
         Ok(set)
     }
@@ -114,7 +114,7 @@ fn read_error(e: tools::ReadError) -> ErrorData {
 impl<U: Upstream> ServerHandler for McpBridge<U> {
     fn get_info(&self) -> ServerConfig {
         let server = &self.inner.config.server;
-        let name = server.name.clone().unwrap_or_else(|| self.inner.upstream.hub().to_string());
+        let name = server.name.clone().unwrap_or_else(|| self.inner.upstream.service().to_string());
         let version = server.version.clone().unwrap_or_else(|| crate::VERSION.to_string());
         let mut info = ServerConfig::new(ServerCapabilities::builder().enable_tools().enable_tool_list_changed().build());
         info.server_info = Implementation::new(name, version);

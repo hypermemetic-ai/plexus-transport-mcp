@@ -1,4 +1,4 @@
-//! The fixture backend every test fronts: a gated hub (`tickets`, roles
+//! The fixture backend every test fronts: a gated service (`tickets`, roles
 //! viewer and editor over the AMP shortcode), served on plexus-transport's
 //! real WebSocket, anonymous upgrades admitted into the view.
 #![allow(dead_code)]
@@ -111,7 +111,7 @@ impl SessionValidator for Keys {
     }
 }
 
-fn hub() -> Arc<DynamicHub> {
+fn service() -> Arc<DynamicHub> {
     let rows = Arc::new(Rows::default());
     rows.add(ADA, "editor", "AMP");
     rows.add(CAT, "viewer", "AMP");
@@ -123,7 +123,7 @@ fn hub() -> Arc<DynamicHub> {
 
 /// The backend on its WebSocket, anonymous upgrades admitted into the view.
 pub async fn backend() -> SocketAddr {
-    let module = DynamicHub::arc_into_rpc_module(hub()).unwrap();
+    let module = DynamicHub::arc_into_rpc_module(service()).unwrap();
     let upgrade = UpgradeOptions { anonymous_view: true, ..Default::default() };
     let (handle, addr) = serve_websocket_with(module, WebSocketConfig::new(0), Some(Arc::new(Keys)), upgrade).await.unwrap();
     // jsonrpsee stops the server when its last handle drops; the backend

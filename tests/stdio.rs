@@ -18,7 +18,7 @@ async fn stdio_lists_and_calls_as_the_bearer_file_says() {
     std::fs::write(&token, "ada\n").unwrap();
 
     let mut cmd = tokio::process::Command::new(env!("CARGO_BIN_EXE_plexus-transport-mcp"));
-    cmd.args(["--url", &format!("ws://{backend}"), "--hub", "menger", "--stdio", "--bearer-file"]).arg(&token);
+    cmd.args(["--url", &format!("ws://{backend}"), "--service", "menger", "--stdio", "--bearer-file"]).arg(&token);
     let client = tokio::time::timeout(Duration::from_secs(20), ().serve(TokioChildProcess::new(cmd).unwrap()))
         .await
         .expect("the child answers initialize")
