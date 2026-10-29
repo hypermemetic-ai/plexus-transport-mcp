@@ -1,0 +1,60 @@
+[package]
+name = "plexus-transport-mcp"
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0-only"
+description = "Any Plexus RPC backend as an MCP server: a bridge over the client transport, beside a running backend or mounted in one"
+repository = "https://github.com/hypermemetic-ai/plexus-transport-mcp"
+# DIST-2: the published crate is the library and its binary — not the notes
+# or hooks that live beside them in the repository.
+include = ["src/**", "README.md", "Cargo.toml"]
+
+[lib]
+name = "plexus_transport_mcp"
+path = "src/lib.rs"
+
+[[bin]]
+name = "plexus-transport-mcp"
+path = "src/bin/plexus-transport-mcp.rs"
+required-features = ["bin"]
+
+[dependencies]
+# TRANSPORT-16: the bridge is a client of Plexus RPC. The socket backend is
+# how it reaches a running backend; an in-process `Upstream` (plexus-transport's
+# `with_mcp`) reaches the hub in memory through the same trait.
+plexus-client = { path = "../plexus-macros/plexus-client", version = "0.6.1", features = ["ws-native"] }
+rmcp = { version = "3.8", default-features = false, features = ["server", "transport-streamable-http-server", "transport-io"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "net", "fs", "io-std", "signal"] }
+axum = "0.8"
+http = "1"
+tower = { version = "0.5", features = ["util"] }
+futures = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tracing = "0.1"
+
+# The binary alone.
+clap = { version = "4", features = ["derive"], optional = true }
+toml = { version = "0.9", optional = true }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"], optional = true }
+
+[features]
+default = ["bin"]
+bin = ["dep:clap", "dep:toml", "dep:tracing-subscriber"]
+
+[dev-dependencies]
+# A fixture backend: a gated hub served over plexus-transport's WebSocket.
+plexus-core = { path = "../plexus-core" }
+plexus-transport = { path = "../plexus-transport", default-features = false }
+plexus-macros = { path = "../plexus-macros" }
+plexus-auth-core = { path = "../plexus-auth-core" }
+# What `#[plexus_macros::activation]`'s expansion links against.
+jsonrpsee = { version = "0.26", features = ["server", "macros"] }
+async-trait = "0.1"
+async-stream = "0.3"
+uuid = { version = "1", features = ["v4"] }
+schemars = { version = "1.1", features = ["derive"] }
+# An rmcp 3.x client over streamable HTTP, and a raw HTTP client for the 401s.
+rmcp = { version = "3.8", default-features = false, features = ["client", "transport-streamable-http-client-reqwest", "reqwest", "transport-child-process"] }
+reqwest = { version = "0.13", default-features = false, features = ["json"] }

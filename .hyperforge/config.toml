@@ -1,0 +1,23 @@
+org = "hypermemetic-ai"
+forges = [
+    "codeberg",
+    "github",
+]
+visibility = "public"
+description = "Any Plexus RPC backend as an MCP server: a bridge over the client transport, beside a running backend or mounted in one"
+
+[ci]
+skip_validate = false
+
+[[ci.runners]]
+type = "local"
+build = [
+    "cargo",
+    "check",
+]
+test = [
+    "cargo",
+    "test",
+    "--lib",
+]
+timeout_secs = 300
