@@ -78,7 +78,9 @@ pub async fn one(transport: &DynTransport, method: MethodRef, params: Value) -> 
     while let Some(item) = stream.next().await {
         match item {
             Ok(StreamItem::Data { content, .. }) => return Ok(content),
-            Ok(StreamItem::Error { message, .. }) => return Err(ReadError::Refused { method: name, message }),
+            Ok(StreamItem::Error { message, error, .. }) => {
+                return Err(ReadError::Refused { method: name, message: message.unwrap_or_else(|| error.to_string()) })
+            }
             Ok(StreamItem::Done { .. }) => break,
             Ok(_) => continue,
             Err(e) => return Err(ReadError::Transport { method: name, message: e.message }),
