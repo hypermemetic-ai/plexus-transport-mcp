@@ -56,7 +56,13 @@ pub async fn run(transport: &DynTransport, tool: &ToolRef, args: Value, ctx: &Re
                 // collected items are the result; progress still flows.
                 items.push(content);
             }
-            Some(Ok(StreamItem::Progress { message, percentage, .. })) => {
+            Some(Ok(StreamItem::Progress { content, .. })) => {
+                // plexus 0.8: the method's progress value; the default
+                // `Note` is `{message, percentage}`, any other its JSON.
+                let (message, percentage) = match serde_json::from_value::<plexus_client::Note>(content.clone()) {
+                    Ok(note) => (note.message, note.percentage),
+                    Err(_) => (content.to_string(), None),
+                };
                 if let Some(token) = &progress_token {
                     progress_count += 1.0;
                     let mut p = ProgressNotificationParam::new(token.clone(), percentage.map(f64::from).unwrap_or(progress_count));
@@ -65,8 +71,8 @@ pub async fn run(transport: &DynTransport, tool: &ToolRef, args: Value, ctx: &Re
                     let _ = ctx.peer.notify_progress(p).await;
                 }
             }
-            Some(Ok(StreamItem::Error { message, code, .. })) => {
-                return failed(items, code.unwrap_or_else(|| "error".to_string()), message);
+            Some(Ok(StreamItem::Error { message, code, error, .. })) => {
+                return failed(items, code.unwrap_or_else(|| error.kind().to_string()), message.unwrap_or_else(|| error.to_string()));
             }
             Some(Ok(StreamItem::Request { request_id, .. })) => {
                 tracing::debug!(tool = %tool.name, request_id, "a bidirectional request has no answer channel over MCP");

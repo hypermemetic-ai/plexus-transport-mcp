@@ -26,8 +26,6 @@ pub struct ToolRef {
     pub method: &'static str,
     /// The dotted path the activation is reached at (`tickets.inputs`).
     pub path: &'static str,
-    /// Declared `streaming`: its items are relayed as they arrive.
-    pub streaming: bool,
 }
 
 impl ToolRef {
@@ -78,7 +76,9 @@ pub async fn one(transport: &DynTransport, method: MethodRef, params: Value) -> 
     while let Some(item) = stream.next().await {
         match item {
             Ok(StreamItem::Data { content, .. }) => return Ok(content),
-            Ok(StreamItem::Error { message, .. }) => return Err(ReadError::Refused { method: name, message }),
+            Ok(StreamItem::Error { message, error, .. }) => {
+                return Err(ReadError::Refused { method: name, message: message.unwrap_or_else(|| error.to_string()) })
+            }
             Ok(StreamItem::Done { .. }) => break,
             Ok(_) => continue,
             Err(e) => return Err(ReadError::Transport { method: name, message: e.message }),
@@ -138,7 +138,6 @@ async fn walk(transport: &DynTransport, ns: &str, path: &str, depth: usize, set:
                         namespace: ns_s,
                         method: intern(name),
                         path: path_s,
-                        streaming: m.get("streaming").and_then(Value::as_bool).unwrap_or(false),
                     },
                 );
                 set.tools.push(tool);
