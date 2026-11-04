@@ -26,8 +26,6 @@ pub struct ToolRef {
     pub method: &'static str,
     /// The dotted path the activation is reached at (`tickets.inputs`).
     pub path: &'static str,
-    /// Declared `streaming`: its items are relayed as they arrive.
-    pub streaming: bool,
 }
 
 impl ToolRef {
@@ -140,7 +138,6 @@ async fn walk(transport: &DynTransport, ns: &str, path: &str, depth: usize, set:
                         namespace: ns_s,
                         method: intern(name),
                         path: path_s,
-                        streaming: m.get("streaming").and_then(Value::as_bool).unwrap_or(false),
                     },
                 );
                 set.tools.push(tool);

@@ -1,6 +1,6 @@
 [package]
 name = "plexus-transport-mcp"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "MIT"
 description = "Any Plexus RPC backend as an MCP server: a bridge over the client transport, beside a running backend or mounted in one"
