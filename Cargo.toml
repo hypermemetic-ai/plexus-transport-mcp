@@ -7,7 +7,7 @@ description = "Any Plexus RPC backend as an MCP server: a bridge over the client
 repository = "https://github.com/hypermemetic-ai/plexus-transport-mcp"
 # DIST-2: the published crate is the library and its binary — not the notes
 # or hooks that live beside them in the repository.
-include = ["src/**", "README.md", "LICENSE", "Cargo.toml"]
+include = ["src/**", "README.md", "CHANGELOG.md", "LICENSE", "Cargo.toml"]
 
 [lib]
 name = "plexus_transport_mcp"
