@@ -6,6 +6,18 @@ starts at 0.2.0; 0.1.0 (TRANSPORT-16, the first release) is in the git history.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] — 2026-11-06
+
+On plexus-client 0.9 (PLEXUS-46), so plexus-transport 0.8's `mcp` feature —
+which hands the bridge plexus-core 0.9's in-process `HubTransport` as a
+`plexus_client::Transport` — has one plexus-client in its tree.
+
+### Breaking
+
+| Change | Before (0.2.0) | After | What to do |
+|---|---|---|---|
+| plexus-client | 0.8 | 0.9 | Move a backend that hands the bridge a `plexus_client::Transport` to plexus-client 0.9 |
+
 ## [0.2.0]
 
 On plexus-client 0.8 (RETURNS-36), the 0.8 line's typed frames.
