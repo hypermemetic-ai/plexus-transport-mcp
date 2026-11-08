@@ -1,6 +1,6 @@
 [package]
 name = "plexus-transport-mcp"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 license = "MIT"
 description = "Any Plexus RPC backend as an MCP server: a bridge over the client transport, beside a running backend or mounted in one"
@@ -22,7 +22,7 @@ required-features = ["bin"]
 # TRANSPORT-16: the bridge is a client of Plexus RPC. The socket backend is
 # how it reaches a running backend; an in-process `Upstream` (plexus-transport's
 # `with_mcp`) reaches the hub in memory through the same trait.
-plexus-client = { path = "../plexus-macros/plexus-client", version = "0.9.0", features = ["ws-native"] }
+plexus-client = { path = "../plexus-macros/plexus-client", version = "0.10.0", features = ["ws-native"] }
 rmcp = { version = "3.8", default-features = false, features = ["server", "transport-streamable-http-server", "transport-io"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "net", "fs", "io-std", "signal"] }
 axum = "0.8"

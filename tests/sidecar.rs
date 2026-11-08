@@ -58,7 +58,7 @@ async fn an_editor_lists_and_calls_what_it_holds() {
     let mcp = sidecar(backend, |_| McpConfig::default()).await;
     let ada = client(mcp, Some("ada")).await;
 
-    assert_eq!(names(&ada).await, ["tickets.door", "tickets.get", "tickets.list", "tickets.set_status", "tickets.tick"]);
+    assert_eq!(names(&ada).await, ["tickets.archive", "tickets.door", "tickets.get", "tickets.list", "tickets.set_status", "tickets.tick"]);
     let tools = ada.peer().list_all_tools().await.unwrap();
     let get = tools.iter().find(|t| t.name == "tickets.get").unwrap();
     assert_eq!(get.annotations.as_ref().unwrap().read_only_hint, Some(true), "GET is read-only");
@@ -167,4 +167,59 @@ async fn without_oauth_a_refused_token_is_a_401_with_a_bare_realm() {
     let r = raw_initialize(mcp, Some("mallory")).await;
     assert_eq!(r.status(), 401);
     assert_eq!(r.headers()["www-authenticate"].to_str().unwrap(), "Bearer realm=\"plexus\", error=\"invalid_token\"");
+}
+
+/// ASK-5: a method that asks, over MCP. The first call does nothing and its
+/// result says what would happen and how to call again; the same tool with
+/// the same arguments, the field and `confirm` carries it out.
+#[tokio::test(flavor = "multi_thread")]
+async fn a_method_that_asks_proposes_then_the_same_tool_with_confirm_carries_it_out() {
+    let backend = backend().await;
+    let mcp = sidecar(backend, |_| McpConfig::default()).await;
+    let ada = client(mcp, Some("ada")).await;
+    let before = common::ARCHIVED.load(std::sync::atomic::Ordering::SeqCst);
+
+    let tools = ada.peer().list_all_tools().await.unwrap();
+    let archive = tools.iter().find(|t| t.name == "tickets.archive").unwrap();
+    assert!(archive.input_schema["properties"]["confirm"].is_object(), "confirm is a parameter of the tool: {:?}", archive.input_schema);
+
+    let args = json!({"ids": ["AMP-4", "AMP-5"]});
+    let r = call(&ada, "tickets.archive", args.clone()).await;
+    assert_ne!(r.is_error, Some(true), "a proposal is a finished call, not an error: {r:?}");
+    assert_eq!(common::ARCHIVED.load(std::sync::atomic::Ordering::SeqCst), before, "a proposal changes nothing");
+    let said = text(&r);
+    let s = r.structured_content.clone().unwrap();
+    let token = s["needs_input"]["token"].as_str().unwrap().to_string();
+    assert!(token.starts_with("v1."), "{token}");
+    for line in [
+        "Nothing was done yet: tickets.archive proposes this and waits for a confirmation.",
+        "Would: archive AMP-4, AMP-5",
+        "- {\"archive\":\"AMP-4\"}",
+        "- reason (one of \"done\", \"stale\"; default \"stale\"): why they go",
+        "call tickets.archive again with the same arguments plus \"confirm\" and a value for each field above:",
+        &token,
+    ] {
+        assert!(said.contains(line), "{line:?} in:\n{said}");
+    }
+    eprintln!("the proposal's tool result:\n{said}");
+    assert_eq!(s["confirm_with"], json!({"ids": ["AMP-4", "AMP-5"], "confirm": token}));
+
+    // The answer: the same arguments, the field under its own name, and the token.
+    let mut again = s["confirm_with"].clone();
+    again["reason"] = json!("stale");
+    let r = call(&ada, "tickets.archive", again.clone()).await;
+    assert_ne!(r.is_error, Some(true), "{r:?}");
+    assert_eq!(
+        r.structured_content.as_ref().unwrap()["items"],
+        json!([{"type": "archived", "id": "AMP-4"}, {"type": "archived", "id": "AMP-5"}]),
+        "{r:?}"
+    );
+    assert!(r.structured_content.as_ref().unwrap().get("needs_input").is_none());
+
+    // The same token again meets a moved plan: a fresh proposal, nothing done.
+    let after = common::ARCHIVED.load(std::sync::atomic::Ordering::SeqCst);
+    let r = call(&ada, "tickets.archive", again).await;
+    let fresh = r.structured_content.unwrap()["needs_input"]["token"].as_str().unwrap().to_string();
+    assert_ne!(fresh, token);
+    assert_eq!(common::ARCHIVED.load(std::sync::atomic::Ordering::SeqCst), after, "the replay did nothing");
 }

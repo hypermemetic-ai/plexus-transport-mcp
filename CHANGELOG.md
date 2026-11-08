@@ -6,6 +6,28 @@ starts at 0.2.0; 0.1.0 (TRANSPORT-16, the first release) is in the git history.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] — unreleased
+
+On plexus-client 0.10 (ASK-2, ASK-5): the in-call question (bidir) is gone
+from the wire, and a method that asks finishes its call with a proposal.
+
+### Breaking
+
+| Change | Before (0.3.0) | After | What to do |
+|---|---|---|---|
+| plexus-client | 0.9 | 0.10 | Move a backend that hands the bridge a `plexus_client::Transport` to plexus-client 0.10 |
+| a `request` item (bidir) | logged at debug and dropped | gone from the wire (plexus-client 0.10 has no `StreamItem::Request`) | Nothing: a 0.10 backend sends none |
+
+### Added
+
+- A `needs_input` item becomes a successful tool result that says nothing
+  was done, what would happen (summary, effects, fields), and that calling
+  the same tool again with the same arguments plus `confirm: <token>` (and
+  each field's value under its own name) carries it out;
+  `structuredContent` is `{needs_input, confirm_with, items}`. No MCP
+  elicitation. `proposal::{needs_input, describe, result, confirming_args}`
+  are public, so plexus-transport's activation bridge answers the same way.
+
 ## [0.3.0] — 2026-11-06
 
 On plexus-client 0.9 (PLEXUS-46), so plexus-transport 0.8's `mcp` feature —

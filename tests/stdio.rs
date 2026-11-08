@@ -26,7 +26,7 @@ async fn stdio_lists_and_calls_as_the_bearer_file_says() {
 
     let mut names: Vec<String> = client.peer().list_all_tools().await.unwrap().into_iter().map(|t| t.name.to_string()).collect();
     names.sort();
-    assert_eq!(names, ["tickets.door", "tickets.get", "tickets.list", "tickets.set_status", "tickets.tick"]);
+    assert_eq!(names, ["tickets.archive", "tickets.door", "tickets.get", "tickets.list", "tickets.set_status", "tickets.tick"]);
 
     let r = client
         .peer()

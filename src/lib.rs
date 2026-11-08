@@ -26,6 +26,8 @@
 //! - [`bridge::McpBridge`] — the rmcp `ServerHandler`.
 //! - [`http::router`] — the axum router: identify, `/mcp`, the metadata.
 //! - [`stdio::serve_stdio`] — the same bridge on stdin and stdout.
+//! - [`proposal`] — a method's proposal (`needs_input`) as a tool result
+//!   that says what would happen and how to call again with `confirm`.
 
 #![forbid(unsafe_code)]
 
@@ -33,6 +35,7 @@ pub mod bridge;
 pub mod call;
 pub mod config;
 pub mod http;
+pub mod proposal;
 pub mod protected_resource;
 pub mod stdio;
 pub mod tools;

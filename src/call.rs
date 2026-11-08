@@ -1,7 +1,9 @@
 //! `tools/call`: one `{service}.call` as the caller, its stream mapped onto one
 //! `CallToolResult` — progress relayed when the client gave a token, and
 //! the caps of [`Limits`] ending the call with a typed error rather than
-//! a hang.
+//! a hang. A call that answered a proposal (`needs_input`, ASK-5) is the
+//! result [`crate::proposal::result`] writes: what would happen and the
+//! call that carries it out.
 
 use std::time::Duration;
 
@@ -12,12 +14,13 @@ use rmcp::service::{RequestContext, RoleServer};
 use serde_json::{json, Value};
 
 use crate::config::Limits;
+use crate::proposal;
 use crate::tools::ToolRef;
 use crate::upstream::DynTransport;
 
 /// Run `tool` as the caller with `args`.
 pub async fn run(transport: &DynTransport, tool: &ToolRef, args: Value, ctx: &RequestContext<RoleServer>, limits: &Limits) -> CallToolResult {
-    let mut stream = transport.call(tool.method_ref(), args);
+    let mut stream = transport.call(tool.method_ref(), args.clone());
     let progress_token = ctx.meta.get_progress_token();
     let deadline = tokio::time::sleep(Duration::from_secs(limits.call_secs));
     tokio::pin!(deadline);
@@ -74,13 +77,13 @@ pub async fn run(transport: &DynTransport, tool: &ToolRef, args: Value, ctx: &Re
             Some(Ok(StreamItem::Error { message, code, error, .. })) => {
                 return failed(items, code.unwrap_or_else(|| error.kind().to_string()), message.unwrap_or_else(|| error.to_string()));
             }
-            Some(Ok(StreamItem::Request { request_id, .. })) => {
-                tracing::debug!(tool = %tool.name, request_id, "a bidirectional request has no answer channel over MCP");
-            }
             Some(Ok(StreamItem::Done { .. })) => break,
         }
     }
-    succeeded(items)
+    match items.iter().find_map(proposal::needs_input).cloned() {
+        Some(p) => proposal::result(&tool.name, &args, &p, items),
+        None => succeeded(items),
+    }
 }
 
 /// The items as one text content: a bare string as itself, one value as
