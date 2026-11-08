@@ -71,25 +71,3 @@ The same bridge over an in-process `Upstream` — plexus-transport's
 | a `streaming` method | its items collected into the result (MCP's logging notifications, the one channel to relay them, are deprecated by SEP-2577) |
 | `Progress` items | `notifications/progress`, when the client gave a token |
 | an `Error` item, a closed socket, a cap of `[limits]` | `isError: true`, `structuredContent.error.{code,message}`, the items collected so far |
-| a method that `asks` (`confirm` among its params) | an ordinary parameter of the tool |
-| a `needs_input` item (a proposal, plexus-wire spec/08) | a successful result whose text says nothing was done, what would happen (summary, effects, fields) and that calling the same tool again with the same arguments plus `confirm: <token>` (and each field's value under its own name) carries it out; `structuredContent` is `{needs_input, confirm_with, items}`, `confirm_with` the confirming call's arguments. No elicitation |
-
-A proposal's result, for `tickets.archive { ids: ["AMP-4", "AMP-5"] }`:
-
-```text
-Nothing was done yet: tickets.archive proposes this and waits for a confirmation.
-
-Would: archive AMP-4, AMP-5
-
-Effects:
-- {"archive":"AMP-4"}
-- {"archive":"AMP-5"}
-
-Fields to fill, each a parameter of this tool, sent under its own name:
-- reason (one of "done", "stale"; default "stale"): why they go
-
-To carry it out, call tickets.archive again with the same arguments plus "confirm" and a value for each field above:
-{"confirm":"v1.1794101342.XR_x…","ids":["AMP-4","AMP-5"]}
-
-The token stands until 2026-11-08T01:29:02Z. Past then, or if anything it covers changes first, the call proposes again and does nothing.
-```

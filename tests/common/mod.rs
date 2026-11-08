@@ -4,31 +4,17 @@
 #![allow(dead_code)]
 
 use std::net::SocketAddr;
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use async_stream::stream;
 use async_trait::async_trait;
 use futures::Stream;
-use plexus_core::plexus::ask::{self, ConfirmToken, Field, NeedsInput, Proposal};
 use plexus_core::plexus::{AuthContext, Gate, Membership, Memberships, Resolve, RoleTable, ScopeRef, SessionValidator};
 use plexus_core::DynamicHub;
 use plexus_transport::websocket::{serve_websocket_with, UpgradeOptions};
 use plexus_transport::WebSocketConfig;
-use serde_json::{json, Value};
-
-/// ASK-5: how many tickets `archive` has archived, process-wide.
-pub static ARCHIVED: AtomicU64 = AtomicU64::new(0);
-
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
-#[serde(tag = "type", rename_all = "snake_case")]
-pub enum ArchiveEvent {
-    /// What `archive` would do, and the token that does it.
-    NeedsInput(NeedsInput),
-    /// One ticket archived.
-    Archived { id: String },
-}
+use serde_json::Value;
 
 #[derive(Clone)]
 struct TicketsActivation;
@@ -36,7 +22,7 @@ struct TicketsActivation;
 #[plexus_macros::activation(
     version = "1.0.0",
     description = "TRANSPORT-16 fixture",
-    roles(viewer = ["get", "list", "tick"], editor = [viewer, "set_status", "archive"]),
+    roles(viewer = ["get", "list", "tick"], editor = [viewer, "set_status"]),
 )]
 impl TicketsActivation {
     /// One ticket.
@@ -55,30 +41,6 @@ impl TicketsActivation {
     #[plexus_macros::method(target = "id")]
     async fn set_status(&self, id: String, status: String) -> impl Stream<Item = String> + Send + 'static {
         stream! { yield format!("{id} -> {status}"); }
-    }
-
-    /// ASK-5: archive tickets once the caller has seen which. `reason` is
-    /// a field the proposal asks for.
-    #[plexus_macros::method(asks, params(ids = "the tickets", reason = "why", confirm = "the proposal's token"))]
-    async fn archive(&self, ids: Vec<String>, reason: Option<String>, confirm: Option<ConfirmToken>) -> impl Stream<Item = ArchiveEvent> + Send + 'static {
-        stream! {
-            if ids.is_empty() { return; }
-            let plan = json!({ "ids": ids, "archived": ARCHIVED.load(Ordering::SeqCst) });
-            match (reason, ask::check(confirm.as_ref(), &plan)) {
-                (Some(_), Ok(())) => {
-                    for id in ids {
-                        ARCHIVED.fetch_add(1, Ordering::SeqCst);
-                        yield ArchiveEvent::Archived { id };
-                    }
-                }
-                _ => {
-                    let p = Proposal::new(format!("archive {}", ids.join(", ")))
-                        .effects(ids.iter().map(|id| json!({ "archive": id })))
-                        .field(Field::new("reason").options(["done", "stale"]).default("stale").help("why they go"));
-                    yield ArchiveEvent::NeedsInput(ask::propose(&plan, p));
-                }
-            }
-        }
     }
 
     /// Listed by no role.
