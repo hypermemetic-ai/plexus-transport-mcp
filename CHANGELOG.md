@@ -6,6 +6,19 @@ starts at 0.2.0; 0.1.0 (TRANSPORT-16, the first release) is in the git history.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] — unreleased
+
+On plexus-client 0.10 (ASK-2, ASK-5, ASK-1): the in-call question (bidir) is
+gone from the wire, with nothing in its place — Plexus has no in-call or
+protocol-wide confirmation.
+
+### Breaking
+
+| Change | Before (0.3.0) | After | What to do |
+|---|---|---|---|
+| plexus-client | 0.9 | 0.10 | Move a backend that hands the bridge a `plexus_client::Transport` to plexus-client 0.10 |
+| a `request` item (bidir) | logged at debug and dropped | gone from the wire (plexus-client 0.10 has no `StreamItem::Request`) | Nothing: a 0.10 backend sends none |
+
 ## [0.3.0] — 2026-11-06
 
 On plexus-client 0.9 (PLEXUS-46), so plexus-transport 0.8's `mcp` feature —

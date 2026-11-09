@@ -74,9 +74,6 @@ pub async fn run(transport: &DynTransport, tool: &ToolRef, args: Value, ctx: &Re
             Some(Ok(StreamItem::Error { message, code, error, .. })) => {
                 return failed(items, code.unwrap_or_else(|| error.kind().to_string()), message.unwrap_or_else(|| error.to_string()));
             }
-            Some(Ok(StreamItem::Request { request_id, .. })) => {
-                tracing::debug!(tool = %tool.name, request_id, "a bidirectional request has no answer channel over MCP");
-            }
             Some(Ok(StreamItem::Done { .. })) => break,
         }
     }
