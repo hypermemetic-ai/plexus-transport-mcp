@@ -6,7 +6,18 @@ starts at 0.2.0; 0.1.0 (TRANSPORT-16, the first release) is in the git history.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.0] — unreleased
+## [0.5.0] — unreleased
+
+NEST-24: on plexus-client 0.11 (NEST-14, NEST-16, NEST-17), so plexus-transport
+0.10's `mcp` feature has one plexus-client in its tree.
+
+### Breaking
+
+| Change | Before (0.4.0) | After | What to do |
+|---|---|---|---|
+| plexus-client | 0.10 | 0.11 | Move a backend that hands the bridge a `plexus_client::Transport` to plexus-client 0.11 |
+
+## [0.4.0]
 
 On plexus-client 0.10 (ASK-2, ASK-5, ASK-1): the in-call question (bidir) is
 gone from the wire, with nothing in its place — Plexus has no in-call or
