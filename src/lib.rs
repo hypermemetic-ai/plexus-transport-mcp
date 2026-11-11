@@ -26,12 +26,14 @@
 //! - [`bridge::McpBridge`] — the rmcp `ServerHandler`.
 //! - [`http::router`] — the axum router: identify, `/mcp`, the metadata.
 //! - [`stdio::serve_stdio`] — the same bridge on stdin and stdout.
+//! - [`gone`] — KEEL-59: a client that goes away is a cancel.
 
 #![forbid(unsafe_code)]
 
 pub mod bridge;
 pub mod call;
 pub mod config;
+pub mod gone;
 pub mod http;
 pub mod protected_resource;
 pub mod stdio;
