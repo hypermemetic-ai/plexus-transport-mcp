@@ -1,0 +1,8 @@
+$ plexus-transport-mcp --url ws://127.0.0.1:4444 --service myservice --listen 127.0.0.1:4445
+$ claude mcp add --transport http myservice http://127.0.0.1:4445/mcp
+Added HTTP MCP server myservice with URL: http://127.0.0.1:4445/mcp to local config
+File modified: ~/.claude.json [project: ~/project]
+$ claude mcp list
+Checking MCP server health…
+
+myservice: http://127.0.0.1:4445/mcp (HTTP) - ✔ Connected
