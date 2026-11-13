@@ -34,6 +34,11 @@ pub async fn run(transport: &DynTransport, tool: &ToolRef, args: Value, ctx: &Re
             _ = ctx.ct.cancelled() => {
                 return failed(items, "cancelled", "the client cancelled the call");
             }
+            // KEEL-59: a client that went away is a cancel: the stream is
+            // dropped as this returns, so the method's work stops.
+            _ = crate::gone::client_gone(ctx) => {
+                return failed(items, "cancelled", "the client went away");
+            }
             next = stream.next() => next,
         };
         match next {

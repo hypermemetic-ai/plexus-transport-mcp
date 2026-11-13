@@ -47,7 +47,9 @@ pub fn router<U: Upstream>(bridge: McpBridge<U>) -> Router {
     let shared = Arc::new(Shared { bridge: bridge.clone(), metadata, admits_anonymous: config.admits_anonymous() });
 
     let http_config = StreamableHttpServerConfig::default().with_allowed_hosts(config.effective_allowed_hosts());
-    let service = StreamableHttpService::new(move || Ok(bridge.clone()), Arc::new(LocalSessionManager::default()), http_config);
+    // KEEL-59: a session that ends cancels its calls at once.
+    let sessions = crate::gone::EndsCalls::new(LocalSessionManager::default());
+    let service = StreamableHttpService::new(move || Ok(bridge.clone()), Arc::new(sessions), http_config);
 
     let mut router = Router::new()
         .nest_service(&config.path, service)
